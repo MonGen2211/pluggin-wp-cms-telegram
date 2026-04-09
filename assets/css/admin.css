@@ -1,0 +1,400 @@
+/* =============================================
+   RESET WORDPRESS ADMIN OVERRIDES
+   ============================================= */
+.cms-tg-page *,
+.cms-tg-page *::before,
+.cms-tg-page *::after {
+    box-sizing: border-box;
+}
+
+.cms-tg-page {
+    max-width: 1400px;
+    margin: 24px 20px 0 0;
+}
+
+.cms-tg-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin: 0 0 20px;
+}
+
+.cms-tg-page-header h1 {
+    margin: 0 0 6px;
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.cms-tg-page-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.cms-tg-grid {
+    display: grid !important;
+    gap: 18px;
+}
+
+.cms-tg-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.cms-tg-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.cms-tg-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.cms-tg-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 22px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.cms-tg-card-header {
+    margin-bottom: 18px;
+}
+
+.cms-tg-card-header h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: #111827;
+}
+
+.cms-tg-card-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.cms-tg-stat-card {
+    min-height: 128px;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center;
+}
+
+.cms-tg-stat-label {
+    display: block !important;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.cms-tg-stat-value {
+    display: block !important;
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.cms-tg-action-list {
+    display: flex !important;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.cms-tg-muted {
+    color: #64748b;
+    line-height: 1.7;
+}
+
+.cms-tg-toolbar-card {
+    padding: 16px 18px;
+}
+
+.cms-tg-toolbar {
+    display: flex !important;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.cms-tg-toolbar input,
+.cms-tg-toolbar select {
+    min-width: 180px;
+}
+
+.cms-tg-table-wrap {
+    overflow-x: auto;
+}
+
+.cms-tg-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.cms-tg-table th,
+.cms-tg-table td {
+    vertical-align: middle;
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+}
+
+.cms-tg-table thead th {
+    background: #f8fafc;
+    color: #334155;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.cms-tg-row-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cms-tg-row-actions a {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.cms-tg-row-actions a.is-danger {
+    color: #dc2626;
+}
+
+.cms-tg-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 92px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.cms-tg-badge.draft {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.cms-tg-badge.scheduled {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.cms-tg-badge.published {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.cms-tg-field {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px;
+}
+
+.cms-tg-field-full {
+    grid-column: 1 / -1;
+}
+
+.cms-tg-field label {
+    display: block !important;
+    float: none !important;
+    width: auto !important;
+    font-size: 13px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0 !important;
+}
+
+.cms-tg-field input[type="text"],
+.cms-tg-field input[type="number"],
+.cms-tg-field input[type="url"],
+.cms-tg-field input[type="datetime-local"],
+.cms-tg-field textarea,
+.cms-tg-field select {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 44px;
+    border: 1px solid #d1d5db !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    transition: all 0.18s ease;
+    float: none !important;
+    margin: 0 !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    color: #111827 !important;
+}
+
+.cms-tg-field textarea {
+    min-height: 160px !important;
+    resize: vertical;
+    line-height: 1.6 !important;
+    padding-top: 12px !important;
+}
+
+.cms-tg-field input::placeholder,
+.cms-tg-field textarea::placeholder {
+    color: #9ca3af !important;
+}
+
+.cms-tg-field input:focus,
+.cms-tg-field textarea:focus,
+.cms-tg-field select:focus {
+    border-color: #2271b1 !important;
+    box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.12) !important;
+    outline: none !important;
+}
+
+.cms-tg-form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.cms-tg-btn {
+    min-height: 42px !important;
+    padding: 0 16px !important;
+    border-radius: 10px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.cms-tg-editor-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 320px !important;
+    gap: 20px;
+    align-items: start;
+}
+
+.cms-tg-editor-main,
+.cms-tg-editor-side {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cms-tg-sticky {
+    position: sticky;
+    top: 32px;
+}
+
+.cms-tg-side-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.cms-tg-side-actions .button {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+    display: flex !important;
+}
+
+.cms-tg-meta-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px;
+}
+
+.cms-tg-meta-item {
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.cms-tg-meta-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.cms-tg-meta-item span {
+    display: block !important;
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.cms-tg-meta-item strong {
+    display: block !important;
+    color: #111827;
+    font-size: 14px;
+}
+
+@media (max-width: 1200px) {
+    .cms-tg-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .cms-tg-editor-layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    .cms-tg-sticky {
+        position: static;
+    }
+}
+
+@media (max-width: 782px) {
+    .cms-tg-grid-2,
+    .cms-tg-grid-3,
+    .cms-tg-grid-4 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .cms-tg-page-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .cms-tg-card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .cms-tg-page {
+        margin-right: 10px;
+    }
+}
+
+.cms-tg-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+}
+
+.cms-tg-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.cms-tg-modal-dialog {
+    position: relative;
+    width: min(560px, calc(100vw - 32px));
+    margin: 80px auto 0;
+    z-index: 2;
+}
+
+.cms-tg-modal .cms-tg-card {
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+}

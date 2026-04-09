@@ -1,0 +1,5 @@
+# Chặn truy cập trực tiếp vào file .env qua browser
+<Files ".env">
+    Order allow,deny
+    Deny from all
+</Files>
