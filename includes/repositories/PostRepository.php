@@ -93,6 +93,7 @@ class PostRepository
             'title'       => sanitize_text_field($data['title'] ?? ''),
             'keyword'     => sanitize_text_field($data['keyword'] ?? ''),
             'website_url' => esc_url_raw($data['website_url'] ?? ''),
+            'category_id' => absint($data['category_id'] ?? 0) ?: null,
             'status'      => in_array(($data['status'] ?? 'draft'), ['draft', 'published'], true)
                 ? $data['status']
                 : 'draft',
@@ -102,7 +103,7 @@ class PostRepository
         ];
         
         $format = [
-            '%s', '%s', '%s', '%s', '%s', '%s', '%s'
+            '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s'
         ];
 
         if (!empty($data['id'])) {
@@ -138,11 +139,12 @@ class PostRepository
                 'title'       => sanitize_text_field($post->getTitle()),
                 'keyword'     => sanitize_text_field($post->getKeyword()),
                 'website_url' => esc_url_raw($post->getWebsiteUrl()),
+                'category_id' => absint($post->getCategoryId()) ?: null,
                 'status'      => sanitize_text_field($post->getStatus()),
                 'updated_at'  => current_time('mysql'),
             ],
             ['id' => $post->getId()],
-            ['%s', '%s', '%s', '%s', '%s'],
+            ['%s', '%s', '%s', '%d', '%s', '%s'],
             ['%d']
         );
 

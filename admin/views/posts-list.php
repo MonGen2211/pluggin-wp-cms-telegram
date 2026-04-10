@@ -9,6 +9,12 @@ $is_logged_in = CMS_Telegram_Auth::is_logged_in();
 $repository = new PostRepository();
 $items      = $repository->getAll();
 
+$categories = (new CategoryRepository())->getAll();
+$category_map = [];
+foreach ($categories as $cat) {
+    $category_map[$cat->getId()] = $cat->getName();
+}
+
 cms_tg_admin_header('Danh sách bài viết', 'Quản lý dữ liệu đang hoạt động');
 ?>
 
@@ -46,6 +52,7 @@ cms_tg_admin_header('Danh sách bài viết', 'Quản lý dữ liệu đang ho�
 					<th>Tiêu đề</th>
 					<th>Keyword</th>
 					<th>Website URL</th>
+					<th width="120">Danh mục</th>
 					<th width="120">Trạng thái</th>
 					<th width="180">Created at</th>
 					<th width="180">Thao tác</th>
@@ -80,6 +87,10 @@ cms_tg_admin_header('Danh sách bài viết', 'Quản lý dữ liệu đang ho�
 									<span style="color:#9ca3af;">-</span>
 								<?php endif; ?>
 							</td>
+							<td><?php 
+								$cat_id = $item->getCategoryId();
+								echo esc_html($cat_id && isset($category_map[$cat_id]) ? $category_map[$cat_id] : '-'); 
+							?></td>
 							<td>
 								<span class="cms-tg-badge <?php echo strtolower(esc_attr($item->getStatus())); ?>">
 									<?php echo esc_html($item->getStatus()); ?>
@@ -91,7 +102,6 @@ cms_tg_admin_header('Danh sách bài viết', 'Quản lý dữ liệu đang ho�
 									<a href="<?php echo esc_url(admin_url('admin.php?page=cms-telegram-create&view=' . $item->getId())); ?>">Xem</a>
 									<?php if ($is_logged_in): ?>
 										<a href="<?php echo esc_url(admin_url('admin.php?page=cms-telegram-create&edit=' . $item->getId())); ?>">Sửa</a>
-										<a href="#" class="btn-single-keyword" data-id="<?php echo esc_attr($item->getId()); ?>" data-website-url="<?php echo esc_attr($item->getWebsiteUrl()); ?>">Lấy keywords</a>
 										<a class="is-danger" href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=cms-telegram-posts&cms_tg_action=trash&id=' . $item->getId()), 'cms_tg_row_action')); ?>">Xóa mềm</a>
 									<?php endif; ?>
 								</div>

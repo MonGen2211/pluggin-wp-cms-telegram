@@ -12,6 +12,7 @@ $is_view = $view_id > 0;
 $id      = $edit_id ?: ($view_id ?: $raw_id);
 
 $post = $id ? (new PostRepository())->find($id) : null;
+$categories = (new CategoryRepository())->getAll();
 ?>
 
 
@@ -70,6 +71,18 @@ $post = $id ? (new PostRepository())->find($id) : null;
                             >
                         </div>
 
+                        <div class="cms-tg-field">
+                            <label for="category_id">Danh mục (Category)</label>
+                            <select id="category_id" name="category_id" <?php echo $is_view ? 'disabled' : ''; ?>>
+                                <option value="">-- Chọn danh mục --</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?php echo esc_attr($cat->getId()); ?>" <?php selected($post?->getCategoryId(), $cat->getId()); ?>>
+                                        <?php echo esc_html($cat->getName()); ?> (ID: <?php echo esc_html($cat->getId()); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
                         <div class="cms-tg-field cms-tg-field-full">
                             <label for="website_url">Website URL</label>
                             <input

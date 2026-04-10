@@ -57,6 +57,7 @@ class PostController
 				$post->setTitle($_POST['title'] ?? '')
 					->setKeyword($_POST['keyword'] ?? '')
 					->setWebsiteUrl($_POST['website_url'] ?? '')
+					->setCategoryId(absint($_POST['category_id'] ?? 0) ?: null)
 					->setStatus($status);
 
 				$repo->update($post);
@@ -67,6 +68,7 @@ class PostController
 				'title'       => $_POST['title'] ?? '',
 				'keyword'     => $_POST['keyword'] ?? '',
 				'website_url' => $_POST['website_url'] ?? '',
+				'category_id' => absint($_POST['category_id'] ?? 0) ?: null,
 				'status'      => $status,
 			];
 			if ($manual_id > 0) {

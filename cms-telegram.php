@@ -25,10 +25,15 @@ require_once CMS_TELEGRAM_PATH . 'includes/models/Post.php';
 require_once CMS_TELEGRAM_PATH . 'includes/repositories/PostRepository.php';
 require_once CMS_TELEGRAM_PATH . 'includes/controllers/PostController.php';
 
+require_once CMS_TELEGRAM_PATH . 'includes/models/Category.php';
+require_once CMS_TELEGRAM_PATH . 'includes/repositories/CategoryRepository.php';
+require_once CMS_TELEGRAM_PATH . 'includes/controllers/CategoryController.php';
+
 // Telegram notification system
 require_once CMS_TELEGRAM_PATH . 'includes/class-telegram-notifier.php';
 require_once CMS_TELEGRAM_PATH . 'includes/class-telegram-settings.php';
 require_once CMS_TELEGRAM_PATH . 'includes/class-telegram-events.php';
+require_once CMS_TELEGRAM_PATH . 'includes/class-cms-telegram-login-notify.php';
 
 add_action('plugins_loaded', function () {
     CMS_Telegram_Auth::init();
@@ -38,7 +43,9 @@ add_action('plugins_loaded', function () {
     CMS_Telegram_Admin_Menu::init();
     CMS_Telegram_Settings::init();
     CMS_Telegram_Events::init();
+		CMS_Telegram_Login_Notify::init();
     PostController::register();
+    CategoryController::register();
 });
 
 // Clean up cron job on deactivation

@@ -7,6 +7,12 @@
     $is_logged_in = CMS_Telegram_Auth::is_logged_in();
     $trash_items  = (new PostRepository())->getTrash();
 
+    $categories = (new CategoryRepository())->getAll();
+    $category_map = [];
+    foreach ($categories as $cat) {
+        $category_map[$cat->getId()] = $cat->getName();
+    }
+
     cms_tg_admin_header('Thùng rác', 'Danh sách dữ liệu đã xóa mềm');
 ?>
 
@@ -20,6 +26,7 @@
                     <th>Tiêu đề</th>
                     <th>Keyword</th>
                     <th>Website URL</th>
+                    <th width="120">Danh mục</th>
                     <th width="180">Deleted at</th>
                     <th width="200">Thao tác</th>
                 </tr>
@@ -44,6 +51,10 @@
                                     <span style="color:#9ca3af;">-</span>
                                 <?php endif; ?>
                             </td>
+                            <td><?php 
+                                $cat_id = $item->getCategoryId();
+                                echo esc_html($cat_id && isset($category_map[$cat_id]) ? $category_map[$cat_id] : '-'); 
+                            ?></td>
                             <td><?php echo esc_html($item->getDeletedAt()); ?></td>
                             <td>
                                 <div class="cms-tg-row-actions">

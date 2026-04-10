@@ -11,6 +11,7 @@ class Post
     public $keyword;
     public $website_url;
     public $status;
+    public $category_id;
     public $created_at;
     public $deleted_at;
     public $updated_at;
@@ -22,6 +23,7 @@ class Post
         $this->keyword     = $row['keyword'] ?? null;
         $this->website_url = $row['website_url'] ?? null;
         $this->status      = $row['status'] ?? 'draft';
+        $this->category_id = $row['category_id'] ?? null;
         $this->created_at  = $row['created_at'] ?? null;
         $this->deleted_at  = $row['deleted_at'] ?? null;
         $this->updated_at  = $row['updated_at'] ?? null;
@@ -50,6 +52,11 @@ class Post
     public function getStatus()
     {
         return $this->status;
+    }
+
+    public function getCategoryId()
+    {
+        return $this->category_id;
     }
 
     public function getCreatedAt()
@@ -83,6 +90,12 @@ class Post
     public function setStatus($v)
     {
         $this->status = $v;
+        return $this;
+    }
+
+    public function setCategoryId($v)
+    {
+        $this->category_id = $v;
         return $this;
     }
 
