@@ -6,6 +6,10 @@ if (!defined('ABSPATH')) {
 
 class CMS_Telegram_Events
 {
+    public static $trashed_posts = [];
+    public static $restored_posts = [];
+    public static $deleted_posts = [];
+
     public static function init()
     {
         // 1. Bài viết mới được tạo trong bảng wp_cms_tg_posts
@@ -14,6 +18,9 @@ class CMS_Telegram_Events
 
         // 2. Bài viết chuyển vào thùng rác (soft delete)
         add_action('cms_tg_post_trashed', [self::class, 'on_post_trashed'], 10, 1);
+
+        // 2.1 Bài viết khôi phục từ thùng rác
+        add_action('cms_tg_post_restored', [self::class, 'on_post_restored'], 10, 1);
 
         // 3. Xóa vĩnh viễn
         add_action('cms_tg_post_force_deleted', [self::class, 'on_post_force_deleted'], 10, 1);
@@ -33,6 +40,26 @@ class CMS_Telegram_Events
             wp_schedule_event(time(), 'every_5_minutes', 'cms_tg_cpu_check');
         }
         add_action('cms_tg_cpu_check', [self::class, 'check_cpu_spike']);
+
+        // 8. Analytics (GA4, GSC)
+        add_action('wp_ajax_cms_tg_notify_analytics', [self::class, 'ajax_notify_analytics']);
+
+        // 10. Daily Analytics Cron
+        if (!wp_next_scheduled('cms_tg_daily_analytics_cron')) {
+            try {
+                $now = new DateTime('now', new DateTimeZone('Asia/Ho_Chi_Minh'));
+                $target = clone $now;
+                $target->setTime(5, 0, 0);
+                if ($now >= $target) {
+                    $target->modify('+1 day');
+                }
+                wp_schedule_event($target->getTimestamp(), 'daily', 'cms_tg_daily_analytics_cron');
+            } catch (Exception $e) {}
+        }
+        add_action('cms_tg_daily_analytics_cron', [self::class, 'daily_analytics_cron']);
+
+        // 9. Gửi bulk notifications khi shutdown
+        add_action('shutdown', [self::class, 'send_queued_notifications']);
     }
 
     // ─── Cron schedule ───────────────────────────────────────────────────────
@@ -68,12 +95,12 @@ class CMS_Telegram_Events
         $status = is_object($post) ? $post->getStatus() : ($post['status'] ?? '?');
         $id     = is_object($post) ? $post->getId()    : ($post['id'] ?? '?');
 
-        $msg = "📝 <b>Bài viết mới được tạo</b>\n"
-             . "🏠 Site: <b>" . self::site() . "</b>\n"
-             . "🆔 ID: <code>{$id}</code>\n"
-             . "📌 Tiêu đề: <b>" . htmlspecialchars($title, ENT_QUOTES) . "</b>\n"
-             . "📊 Trạng thái: <code>{$status}</code>\n"
-             . "🕐 Thời gian: " . self::now();
+        $msg = "<b>Bài viết mới được tạo</b>\n"
+             . "Site: <b>" . self::site() . "</b>\n"
+             . "ID: <code>{$id}</code>\n"
+             . "Tiêu đề: <b>" . htmlspecialchars($title, ENT_QUOTES) . "</b>\n"
+             . "Trạng thái: <code>{$status}</code>\n"
+             . "Thời gian: " . self::now();
 
         CMS_Telegram_Notifier::send($msg);
     }
@@ -84,34 +111,25 @@ class CMS_Telegram_Events
     {
         if (!CMS_Telegram_Notifier::is_enabled('notify_trash_post')) return;
 
-        $title = is_object($post) ? $post->getTitle() : ($post['title'] ?? '?');
-        $id    = is_object($post) ? $post->getId()    : ($post['id'] ?? '?');
-
-        $msg = "🗑️ <b>Bài viết chuyển vào thùng rác</b>\n"
-             . "🏠 Site: <b>" . self::site() . "</b>\n"
-             . "🆔 ID: <code>{$id}</code>\n"
-             . "📌 Tiêu đề: <b>" . htmlspecialchars($title, ENT_QUOTES) . "</b>\n"
-             . "🕐 Thời gian: " . self::now();
-
-        CMS_Telegram_Notifier::send($msg);
+        self::$trashed_posts[] = $post;
     }
 
+    // ─── 2.1 Bài viết khôi phục ─────────────────────────────────────────────
+ 
+    public static function on_post_restored($post)
+    {
+        if (!CMS_Telegram_Notifier::is_enabled('notify_restore_post')) return;
+ 
+        self::$restored_posts[] = $post;
+    }
+ 
     // ─── 3. Xóa vĩnh viễn ────────────────────────────────────────────────────
 
     public static function on_post_force_deleted($post)
     {
         if (!CMS_Telegram_Notifier::is_enabled('notify_delete_post')) return;
 
-        $title = is_object($post) ? $post->getTitle() : ($post['title'] ?? '?');
-        $id    = is_object($post) ? $post->getId()    : ($post['id'] ?? '?');
-
-        $msg = "❌ <b>Bài viết bị xóa vĩnh viễn</b>\n"
-             . "🏠 Site: <b>" . self::site() . "</b>\n"
-             . "🆔 ID: <code>{$id}</code>\n"
-             . "📌 Tiêu đề: <b>" . htmlspecialchars($title, ENT_QUOTES) . "</b>\n"
-             . "🕐 Thời gian: " . self::now();
-
-        CMS_Telegram_Notifier::send($msg);
+        self::$deleted_posts[] = $post;
     }
 
     // ─── 4. Đăng nhập ────────────────────────────────────────────────────────
@@ -154,12 +172,12 @@ class CMS_Telegram_Events
         $ip       = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $list_str = implode("\n", $active_list);
 
-        $msg = "⚠️ <b>Cảnh báo: Có {$active_count} người đang đăng nhập!</b>\n"
-             . "🏠 Site: <b>" . self::site() . "</b>\n"
-             . "👥 Ngưỡng cho phép: <b>{$threshold}</b> người\n"
-             . "📋 Danh sách:\n{$list_str}\n"
-             . "🌐 IP lần đăng nhập này: <code>{$ip}</code>\n"
-             . "🕐 Thời gian: " . self::now();
+        $msg = "<b>Cảnh báo: Có {$active_count} người đang đăng nhập!</b>\n"
+             . "Site: <b>" . self::site() . "</b>\n"
+             . "Ngưỡng cho phép: <b>{$threshold}</b> người\n"
+             . "Danh sách:\n{$list_str}\n"
+             . "IP lần đăng nhập này: <code>{$ip}</code>\n"
+             . "Thời gian: " . self::now();
 
         CMS_Telegram_Notifier::send($msg);
     }
@@ -185,10 +203,10 @@ class CMS_Telegram_Events
 
         $list = implode("\n  • ", $names);
 
-        $msg = "🔄 <b>Plugin được cập nhật</b>\n"
-             . "🏠 Site: <b>" . self::site() . "</b>\n"
-             . "📦 Plugin:\n  • {$list}\n"
-             . "🕐 Thời gian: " . self::now();
+        $msg = "<b>Plugin được cập nhật</b>\n"
+             . "Site: <b>" . self::site() . "</b>\n"
+             . "Plugin:\n  • {$list}\n"
+             . "Thời gian: " . self::now();
 
         CMS_Telegram_Notifier::send($msg);
     }
@@ -206,13 +224,13 @@ class CMS_Telegram_Events
 
         $user = wp_get_current_user();
 
-        $msg = "⚡ <b>Bulk action thành công</b>\n"
-             . "🏠 Site: <b>" . self::site() . "</b>\n"
-             . "🔧 Thao tác: <code>" . esc_html($action) . "</code>\n"
-             . "📊 Số lượng: <b>{$count}</b> bài\n"
-             . ($detail ? "📝 Chi tiết: {$detail}\n" : '')
-             . "👤 Thực hiện bởi: <code>" . esc_html($user->user_login ?? 'unknown') . "</code>\n"
-             . "🕐 Thời gian: " . self::now();
+        $msg = "<b>Bulk action thành công</b>\n"
+             . "Site: <b>" . self::site() . "</b>\n"
+             . "Thao tác: <code>" . esc_html($action) . "</code>\n"
+             . "Số lượng: <b>{$count}</b> bài\n"
+             . ($detail ? " Chi tiết: {$detail}\n" : '')
+             . "Thực hiện bởi: <code>" . esc_html($user->user_login ?? 'unknown') . "</code>\n"
+             . "Thời gian: " . self::now();
 
         CMS_Telegram_Notifier::send($msg);
     }
@@ -243,14 +261,14 @@ class CMS_Telegram_Events
         $cpu_pct = self::get_cpu_percent();
         $cpu_str = $cpu_pct !== null ? "<b>{$cpu_pct}%</b>" : 'N/A (Windows)';
 
-        $msg = "🚨 <b>CPU tăng đột biến!</b>\n"
-             . "🏠 Site: <b>" . self::site() . "</b>\n"
-             . "�️ CPU sử dụng: {$cpu_str}\n"
-             . "�📊 Load average:\n"
+        $msg = "<b>CPU tăng đột biến!</b>\n"
+             . " Site: <b>" . self::site() . "</b>\n"
+             . "CPU sử dụng: {$cpu_str}\n"
+             . "Load average:\n"
              . "  • 1 phút: <b>{$load1}</b> (ngưỡng: {$threshold})\n"
              . "  • 5 phút: <b>{$load5}</b>\n"
              . "  • 15 phút: <b>{$load15}</b>\n"
-             . "🕐 Thời gian: " . self::now();
+             . "Thời gian: " . self::now();
 
         CMS_Telegram_Notifier::send($msg);
     }
@@ -324,6 +342,177 @@ class CMS_Telegram_Events
         $timestamp = wp_next_scheduled('cms_tg_cpu_check');
         if ($timestamp) {
             wp_unschedule_event($timestamp, 'cms_tg_cpu_check');
+        }
+
+        $timestamp_daily = wp_next_scheduled('cms_tg_daily_analytics_cron');
+        if ($timestamp_daily) {
+            wp_unschedule_event($timestamp_daily, 'cms_tg_daily_analytics_cron');
+        }
+    }
+
+    // ─── 8. Analytics ────────────────────────────────────────────────────────
+
+    public static function ajax_notify_analytics()
+    {
+        check_ajax_referer('cms_tg_notify_analytics_action', 'nonce');
+
+        $type  = $_POST['type'] ?? '';
+        $stats = json_decode(stripslashes($_POST['stats'] ?? '{}'), true);
+
+        if (!$stats) {
+            wp_send_json_error('Invalid data');
+        }
+
+        if ($type === 'ga4') {
+            $msg = "<b>Báo cáo GA4 Stats</b> (28 ngày qua)\n"
+                 . "Site: <b>" . self::site() . "</b>\n"
+                 . "Tổng Users: <b>" . number_format((float) ($stats['totalUsers'] ?? 0)) . "</b>\n"
+                 . "Tổng thời lượng: <b>" . ($stats['totalDurationFormatted'] ?? 0) . "</b>\n"
+                 . "Thời gian: " . self::now();
+        } elseif ($type === 'gsc') {
+            $msg = "<b>Báo cáo GSC Stats</b> (28 ngày qua)\n"
+                 . "Site: <b>" . self::site() . "</b>\n"
+                 . "Tổng hiển thị: <b>" . number_format((float) ($stats['impressions'] ?? 0)) . "</b>\n"
+                 . "Tổng nhấp: <b>" . number_format((float) ($stats['clicks'] ?? 0)) . "</b>\n"
+                 . "Thời gian: " . self::now();
+        } else {
+            wp_send_json_error('Invalid type');
+        }
+
+        CMS_Telegram_Notifier::send($msg);
+        wp_send_json_success();
+    }
+
+    public static function daily_analytics_cron()
+    {
+        $ga4_url = 'https://script.google.com/macros/s/AKfycbwyNKy1B3EZmoyHKpYx2hxtfq4dudb9rO_acvPeA4yhMC6vqRO4Q-3LJl2ONUMKyMwOyg/exec?type=summary&startDate=28daysAgo&endDate=today';
+        $gsc_url = 'https://script.google.com/macros/s/AKfycbwfhlv440h239p7whPetTJVlk9V51lLAJIJjWBAsOfNgRg9PwqNhoGyntaFXawULbTJwQ/exec?type=summary&startDate=28daysAgo&endDate=today';
+
+        // Gọi GA4
+        $ga4_response = wp_remote_get($ga4_url, ['timeout' => 30]);
+        if (!is_wp_error($ga4_response) && wp_remote_retrieve_response_code($ga4_response) === 200) {
+            $ga4_body = wp_remote_retrieve_body($ga4_response);
+            $stats = json_decode($ga4_body, true);
+            if ($stats && ($stats['status'] ?? '') === 'ok') {
+                $msg = "<b>Báo cáo GA4 Stats tự động</b> (28 ngày qua)\n"
+                     . "Site: <b>" . self::site() . "</b>\n"
+                     . "Tổng Users: <b>" . number_format((float) ($stats['totalUsers'] ?? 0)) . "</b>\n"
+                     . "Tổng thời lượng: <b>" . ($stats['totalDurationFormatted'] ?? 0) . "</b>\n"
+                     . "Thời gian: " . self::now();
+                CMS_Telegram_Notifier::send($msg);
+            }
+        }
+
+        // Gọi GSC
+        $gsc_response = wp_remote_get($gsc_url, ['timeout' => 30]);
+        if (!is_wp_error($gsc_response) && wp_remote_retrieve_response_code($gsc_response) === 200) {
+            $gsc_body = wp_remote_retrieve_body($gsc_response);
+            $stats = json_decode($gsc_body, true);
+            if ($stats && ($stats['status'] ?? '') === 'ok') {
+                $msg = "<b>Báo cáo GSC Stats tự động</b> (28 ngày qua)\n"
+                     . "Site: <b>" . self::site() . "</b>\n"
+                     . "Tổng hiển thị: <b>" . number_format((float) ($stats['impressions'] ?? 0)) . "</b>\n"
+                     . "Tổng nhấp: <b>" . number_format((float) ($stats['clicks'] ?? 0)) . "</b>\n"
+                     . "Thời gian: " . self::now();
+                CMS_Telegram_Notifier::send($msg);
+            }
+        }
+    }
+
+    // ─── 9. Queued Notifications ─────────────────────────────────────────────
+
+    public static function send_queued_notifications()
+    {
+        if (!empty(self::$trashed_posts)) {
+            self::send_bulk_post_notification(self::$trashed_posts, 'trash');
+        }
+        if (!empty(self::$restored_posts)) {
+            self::send_bulk_post_notification(self::$restored_posts, 'restore');
+        }
+        if (!empty(self::$deleted_posts)) {
+            self::send_bulk_post_notification(self::$deleted_posts, 'delete');
+        }
+    }
+
+    private static function send_bulk_post_notification($posts, $action)
+    {
+        $count = count($posts);
+ 
+        if ($count === 1) {
+            $post = $posts[0];
+            $title = is_object($post) ? $post->getTitle() : ($post['title'] ?? '?');
+            $id    = is_object($post) ? $post->getId()    : ($post['id'] ?? '?');
+ 
+            switch ($action) {
+                case 'trash':
+                    $header = "<b>Bài viết chuyển vào thùng rác</b>";
+                    break;
+                case 'restore':
+                    $header = "<b>Bài viết được khôi phục</b>";
+                    break;
+                case 'delete':
+                default:
+                    $header = "<b>Bài viết bị xóa vĩnh viễn</b>";
+                    break;
+            }
+ 
+            $msg = "{$header}\n"
+                 . "Site: <b>" . self::site() . "</b>\n"
+                 . "ID: <code>{$id}</code>\n"
+                 . "Tiêu đề: <b>" . htmlspecialchars($title, ENT_QUOTES) . "</b>\n"
+                 . "Thời gian: " . self::now();
+ 
+            CMS_Telegram_Notifier::send($msg);
+        } else {
+            $urls_list = [];
+            $limit = 50;
+            $more = 0;
+            
+            foreach ($posts as $idx => $post) {
+                if ($idx >= $limit) {
+                    $more++;
+                    continue;
+                }
+                $title = is_object($post) ? $post->getTitle() : ($post['title'] ?? '?');
+                $id    = is_object($post) ? $post->getId()    : ($post['id'] ?? '?');
+                $url   = is_object($post) ? $post->getWebsiteUrl() : ($post['website_url'] ?? '');
+                
+                if (empty($url)) {
+                    $url = get_permalink($id);
+                }
+ 
+                if ($url) {
+                    $urls_list[] = "• " . htmlspecialchars($title, ENT_QUOTES) . "\n   🔗 <a href=\"" . esc_url($url) . "\">" . esc_html($url) . "</a>";
+                } else {
+                    $urls_list[] = "• " . htmlspecialchars($title, ENT_QUOTES);
+                }
+            }
+ 
+            if ($more > 0) {
+                $urls_list[] = "<i>... và {$more} bài khác.</i>";
+            }
+ 
+            $list_str = implode("\n", $urls_list);
+ 
+            switch ($action) {
+                case 'trash':
+                    $header = "<b>Chuyển {$count} bài viết vào thùng rác</b>";
+                    break;
+                case 'restore':
+                    $header = "<b>Khôi phục {$count} bài viết</b>";
+                    break;
+                case 'delete':
+                default:
+                    $header = "<b>Xóa vĩnh viễn {$count} bài viết</b>";
+                    break;
+            }
+ 
+             $msg = "{$header}\n"
+                  . "Site: <b>" . self::site() . "</b>\n"
+                  . "Chi tiết URL:\n{$list_str}\n"
+                  . "Thời gian: " . self::now();
+ 
+            CMS_Telegram_Notifier::send($msg);
         }
     }
 }

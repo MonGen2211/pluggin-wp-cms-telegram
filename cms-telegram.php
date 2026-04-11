@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CMS Telegram
  * Description: CMS manager UI for posts dashboard.
- * Version: 1.0.0
+ * Version: 1.0.8
  * Author: Vu
  */
 
@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 
 define('CMS_TELEGRAM_PATH', plugin_dir_path(__FILE__));
 define('CMS_TELEGRAM_URL', plugin_dir_url(__FILE__));
+define('CMS_TELEGRAM_VERSION', '1.0.8');
 
 require_once CMS_TELEGRAM_PATH . 'includes/helpers.php';
 require_once CMS_TELEGRAM_PATH . 'includes/class-assets.php';
@@ -25,7 +26,7 @@ require_once CMS_TELEGRAM_PATH . 'includes/models/Post.php';
 require_once CMS_TELEGRAM_PATH . 'includes/repositories/PostRepository.php';
 require_once CMS_TELEGRAM_PATH . 'includes/controllers/PostController.php';
 
-require_once CMS_TELEGRAM_PATH . 'includes/models/Category.php';
+require_once CMS_TELEGRAM_PATH . 'includes/models/Category.php'; 
 require_once CMS_TELEGRAM_PATH . 'includes/repositories/CategoryRepository.php';
 require_once CMS_TELEGRAM_PATH . 'includes/controllers/CategoryController.php';
 
@@ -34,6 +35,8 @@ require_once CMS_TELEGRAM_PATH . 'includes/class-telegram-notifier.php';
 require_once CMS_TELEGRAM_PATH . 'includes/class-telegram-settings.php';
 require_once CMS_TELEGRAM_PATH . 'includes/class-telegram-events.php';
 require_once CMS_TELEGRAM_PATH . 'includes/class-cms-telegram-login-notify.php';
+require_once CMS_TELEGRAM_PATH . 'includes/class-cms-telegram-plugin-update-notify.php';
+require_once CMS_TELEGRAM_PATH . 'includes/class-wp-post-sync.php';
 
 add_action('plugins_loaded', function () {
     CMS_Telegram_Auth::init();
@@ -44,6 +47,8 @@ add_action('plugins_loaded', function () {
     CMS_Telegram_Settings::init();
     CMS_Telegram_Events::init();
 		CMS_Telegram_Login_Notify::init();
+		CMS_Telegram_Plugin_Update_Notify::init();
+        CMS_Telegram_WP_Post_Sync::init();
     PostController::register();
     CategoryController::register();
 });

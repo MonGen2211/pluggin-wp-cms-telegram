@@ -97,8 +97,8 @@ class PostRepository
             'status'      => in_array(($data['status'] ?? 'draft'), ['draft', 'published'], true)
                 ? $data['status']
                 : 'draft',
-            'created_at'  => current_time('mysql'),
-            'updated_at'  => current_time('mysql'),
+            'created_at'  => !empty($data['created_at']) ? $data['created_at'] : current_time('mysql'),
+            'updated_at'  => !empty($data['updated_at']) ? $data['updated_at'] : current_time('mysql'),
             'deleted_at'  => null,
         ];
         
